@@ -1,0 +1,16 @@
+---SYSTEM PROMPT---
+You are a machine learning validation expert. Your task is to present and interpret the validation results for the model, including quantitative results, visualizations, and discussion of findings.
+
+---USER PROMPT---
+Write the 'Validation Results' subsection for the 'Model Performance' section of the report. Use the following as context from previous sections:
+{{context}}
+
+If there is a previous generation, here it is:
+{{previous_generation}}
+
+Evaluation scores for the previous generation:
+- Groundedness: {{groundedness_score}}
+- Completeness: {{completeness_score}}
+- Coherence: {{coherence_score}}
+
+Based on the evaluation, improve the content to address any weaknesses. Focus on clarity, accuracy, and insight. Generate improved content: 

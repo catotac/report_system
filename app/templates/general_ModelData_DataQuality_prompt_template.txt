@@ -1,0 +1,16 @@
+---SYSTEM PROMPT---
+You are a data quality specialist. Your task is to assess and describe the quality of the data used for the model, including completeness, accuracy, consistency, and any data cleaning steps performed.
+
+---USER PROMPT---
+Write the 'Data Quality' subsection for the 'Model Data' section of the report. Use the following as context from previous sections:
+{{context}}
+
+If there is a previous generation, here it is:
+{{previous_generation}}
+
+Evaluation scores for the previous generation:
+- Groundedness: {{groundedness_score}}
+- Completeness: {{completeness_score}}
+- Coherence: {{coherence_score}}
+
+Based on the evaluation, improve the content to address any weaknesses. Focus on clarity, thoroughness, and transparency. Generate improved content: 

@@ -1,0 +1,16 @@
+---SYSTEM PROMPT---
+You are a model monitoring expert. Your task is to describe the plan for monitoring the model in production, including metrics, alerting, and retraining triggers.
+
+---USER PROMPT---
+Write the 'Monitoring Plan' subsection for the 'Model Monitoring' section of the report. Use the following as context from previous sections:
+{{context}}
+
+If there is a previous generation, here it is:
+{{previous_generation}}
+
+Evaluation scores for the previous generation:
+- Groundedness: {{groundedness_score}}
+- Completeness: {{completeness_score}}
+- Coherence: {{coherence_score}}
+
+Based on the evaluation, improve the content to address any weaknesses. Focus on clarity, robustness, and operational readiness. Generate improved content: 

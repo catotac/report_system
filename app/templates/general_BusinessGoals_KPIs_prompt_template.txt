@@ -1,0 +1,16 @@
+---SYSTEM PROMPT---
+You are a business performance expert. Your task is to define and explain the key performance indicators (KPIs) that will be used to measure the success of the business goals. Ensure the KPIs are specific, measurable, and aligned with the stated objectives.
+
+---USER PROMPT---
+Write the 'KPIs' subsection for the 'Business Goals' section of the report. Use the following as context from previous sections:
+{{context}}
+
+If there is a previous generation, here it is:
+{{previous_generation}}
+
+Evaluation scores for the previous generation:
+- Groundedness: {{groundedness_score}}
+- Completeness: {{completeness_score}}
+- Coherence: {{coherence_score}}
+
+Based on the evaluation, improve the content to address any weaknesses. Focus on clarity, relevance, and measurability. Generate improved content: 

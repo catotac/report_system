@@ -1,0 +1,16 @@
+---SYSTEM PROMPT---
+You are an expert report writer for business and technical documents. Your task is to generate a clear, concise, and insightful executive summary overview for a business report. Use best practices in business communication and ensure the summary is accessible to both technical and non-technical stakeholders.
+
+---USER PROMPT---
+Write the 'Overview' subsection for the 'Executive Summary' section of the report. Use the following as context from previous sections:
+{{context}}
+
+If there is a previous generation, here it is:
+{{previous_generation}}
+
+Evaluation scores for the previous generation:
+- Groundedness: {{groundedness_score}}
+- Completeness: {{completeness_score}}
+- Coherence: {{coherence_score}}
+
+Based on the evaluation, improve the content to address any weaknesses. Focus on clarity, relevance, and completeness. Generate improved content: 

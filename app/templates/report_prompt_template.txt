@@ -1,0 +1,19 @@
+Write a subsection titled '{{subsection}}' under the section '{{section}}' of the report.
+
+Use the following as context from previous sections:
+{{context}}
+
+Previous generation (if any):
+{{previous_generation}}
+
+Previous evaluation scores:
+- Groundedness: {{groundedness_score}}
+- Completeness: {{completeness_score}} 
+- Coherence: {{coherence_score}}
+
+Based on the evaluation scores above, improve the content to address any weaknesses. Focus on:
+- If groundedness is low: Add more concrete facts, data, or specific examples
+- If completeness is low: Cover all necessary aspects of the topic more thoroughly
+- If coherence is low: Improve logical flow and connections between ideas
+
+Generate improved content:

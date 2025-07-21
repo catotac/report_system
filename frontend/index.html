@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LLM Document System</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f7f7f7; }
+    .tabs { display: flex; background: #222; color: #fff; }
+    .tab { padding: 16px 32px; cursor: pointer; border-bottom: 3px solid transparent; }
+    .tab.active { border-bottom: 3px solid #007bff; background: #333; }
+    .container { display: flex; padding: 32px; }
+    .left, .right { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 24px; }
+    .left { flex: 2; margin-right: 24px; }
+    .right { flex: 1; min-width: 300px; }
+    .section-title { font-weight: bold; margin-top: 32px; font-size: 1.2em; }
+    .subsection-block { margin-bottom: 32px; background: #f9f9fc; border-radius: 8px; padding: 18px 18px 36px 18px; position: relative; box-shadow: 0 1px 4px #0001; }
+    .subsection-label { font-weight: bold; margin-bottom: 6px; }
+    .input-area { width: 100%; min-height: 60px; margin-bottom: 8px; }
+    .eval-score { position: absolute; right: 18px; bottom: 8px; font-size: 0.85em; color: #666; text-align: right; }
+    .reflection-box { background: #f0f4fa; border-radius: 6px; padding: 8px; margin-top: 6px; font-size: 0.95em; }
+    .prompt-btn, .selfgen-btn { margin-top: 8px; background: #007bff; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; }
+    .prompt-btn:hover, .selfgen-btn:hover { background: #0056b3; }
+    .upload-block { margin: 18px 0; padding: 16px; background: #f0f4fa; border-radius: 8px; }
+    .upload-label { font-weight: bold; margin-right: 8px; }
+    .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0008; z-index: 1000; }
+    .modal { background: #fff; border-radius: 8px; max-width: 600px; margin: 60px auto; padding: 32px; position: relative; }
+    .modal textarea { width: 100%; min-height: 180px; }
+    .close-modal { position: absolute; top: 12px; right: 18px; font-size: 22px; cursor: pointer; color: #888; }
+    .save-btn { background: #28a745; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 12px; }
+    .save-btn:hover { background: #218838; }
+    .highlight { background: #ffe066; color: #333; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-left: 8px; }
+    .upload-input { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div style="padding: 16px; background: #e9ecef;">
+    <label for="group-select"><b>Group:</b></label>
+    <select id="group-select" onchange="onGroupChange()">
+      <option value="default">Default</option>
+      <option value="groupA">Group A</option>
+      <option value="groupB">Group B</option>
+      <!-- Add more groups as needed -->
+    </select>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-type="report">Report Generator</div>
+    <div class="tab" data-type="review">Review Generator</div>
+    <div class="tab" data-type="assessment">Assessment Generator</div>
+    <div class="tab" data-type="checklist">Checklist Generator</div>
+  </div>
+  <div class="container">
+    <div class="left">
+      <h2 id="doc-title"></h2>
+      <div id="upload-blocks"></div>
+      <form id="report-form">
+        <div id="report-sections"></div>
+      </form>
+    </div>
+    <div class="right">
+      <!-- Reserved for future summary, or can be left empty -->
+    </div>
+  </div>
+  <script>
+    // --- Config ---
+    const reportSections = [
+      { name: "Executive Summary", subs: ["Overview", "Key Points"] },
+      { name: "Business Goals", subs: ["Objectives", "KPIs"] },
+      { name: "Model Data", subs: ["Data Sources", "Data Quality", "Preprocessing"] },
+      { name: "Model Selection", subs: ["Candidate Models", "Selection Criteria"] },
+      { name: "Model Performance", subs: ["Metrics", "Validation Results"] },
+      { name: "Model Testing", subs: ["Test Strategy", "Test Results"] },
+      { name: "Model Monitoring", subs: ["Monitoring Plan", "Alerting & Retraining"] }
+    ];
+    const docTypes = {
+      report: {
+        title: "Report Generator",
+        sections: reportSections
+      },
+      review: {
+        title: "Review Generator",
+        defaultSections: {
+          "Overview": ["Scope", "Criteria"],
+          "Evaluation": ["Strengths", "Weaknesses"]
+        }
+      },
+      assessment: {
+        title: "Assessment Generator",
+        defaultSections: {
+          "Assessment Intro": ["Purpose", "Scope"],
+          "Assessment Details": ["Criteria", "Results"]
+        }
+      },
+      checklist: {
+        title: "Checklist Generator",
+        defaultSections: {
+          "Checklist Intro": ["Purpose", "Items"],
+          "Checklist Review": ["Completion", "Issues"]
+        }
+      }
+    };
+    let currentType = 'report';
+    let userInputs = {};
+    let evalResults = {};
+    let reflectionResults = {};
+    let selfGenStatus = {};
+    let selfGenIterations = {};
+    let promptTemplateVisible = {};
+    let promptTemplates = {};
+    let currentGroup = 'default';
+
+    // --- Tab Logic ---
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.onclick = () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentType = tab.getAttribute('data-type');
+        userInputs = {};
+        evalResults = {};
+        reflectionResults = {};
+        selfGenStatus = {};
+        selfGenIterations = {};
+        renderUI();
+      };
+    });
+
+    // --- Upload Blocks ---
+    function renderUploadBlocks() {
+      if(currentType !== 'report') { document.getElementById('upload-blocks').innerHTML = ''; return; }
+      document.getElementById('upload-blocks').innerHTML = `
+        <div class='upload-block'>
+          <span class='upload-label'>Upload Word Document (Full Report):</span>
+          <input class='upload-input' type='file' accept='.doc,.docx' id='word-upload'>
+        </div>
+        <div class='upload-block'>
+          <span class='upload-label'>Upload Context (Documents, Figures, Tables, Images):</span>
+          <input class='upload-input' type='file' multiple id='context-upload'>
+        </div>
+      `;
+    }
+
+    // --- Report Sections Render ---
+    function renderReportSections() {
+      const sections = docTypes.report.sections;
+      let html = '';
+      sections.forEach((section, sIdx) => {
+        html += `<div class='section-title'>${section.name}</div>`;
+        section.subs.forEach((sub, subIdx) => {
+          const key = section.name+'::'+sub;
+          const keyId = key.replace(/\s/g,"");
+          html += `<div class='subsection-block' id='block-${keyId}'>`;
+          // Prompt template toggle button
+          html += `<button class='prompt-btn' type='button' onclick='togglePromptTemplate("${key}")'>${promptTemplateVisible[key] ? "Hide" : "Show/Edit"} Prompt Template</button>`;
+          // Prompt template area
+          html += `<div id='prompt-area-${keyId}' style='display:${promptTemplateVisible[key] ? "block" : "none"}; margin-top:8px;'>`;
+          html += `<div style='font-size:0.95em; color:#555; margin-bottom:4px;'>Group: <b>${currentGroup}</b> | Section: <b>${section.name}</b> | Subsection: <b>${sub}</b></div>`;
+          html += `<textarea id='prompt-template-${keyId}' style='width:100%;min-height:80px;'>${promptTemplates[key]||''}</textarea><br>`;
+          html += `<button class='save-btn' type='button' onclick='savePromptTemplate("${key}", "${section.name}", "${sub}")'>Save Template</button> <span id='save-status-${keyId}'></span>`;
+          html += `</div>`;
+          // Subsection input and controls
+          html += `<div class='subsection-label'>${sub}</div>`;
+          html += `<textarea class='input-area' id='input-${keyId}' placeholder='Enter content for ${sub}'>${userInputs[key]||''}</textarea><br>`;
+          html += `<button class='prompt-btn' type='button' onclick='submitSubsection("${section.name}", "${sub}")'>Submit</button> `;
+          html += `<button class='selfgen-btn' type='button' onclick='selfGenerate("${section.name}", "${sub}")'>Self-Generate</button>`;
+          if(selfGenStatus[key]) html += `<span class='highlight'>Generating and thinking...</span>`;
+          if(reflectionResults[key]) html += `<div class='reflection-box'>${reflectionResults[key]}</div>`;
+          html += `<div class='eval-score' id='eval-${keyId}'><span>${evalResults[key]||''}</span></div>`;
+          html += `</div>`;
+        });
+      });
+      document.getElementById('report-sections').innerHTML = html;
+    }
+
+    // --- UI Render ---
+    function renderUI() {
+      document.getElementById('doc-title').innerText = docTypes[currentType].title;
+      renderUploadBlocks();
+      if(currentType === 'report') {
+        renderReportSections();
+      } else {
+        document.getElementById('report-sections').innerHTML = '<div style="padding:32px;">(Switch to Report Generator for advanced layout.)</div>';
+      }
+    }
+
+    // --- Subsection Submission ---
+    async function submitSubsection(section, sub) {
+      const key = section+'::'+sub;
+      const val = document.getElementById('input-'+key.replace(/\s/g,"")).value;
+      userInputs[key] = val;
+      await evaluateAndReflect(section, sub, val);
+    }
+
+    // --- Self-Generate (up to 4 iterations) ---
+    async function selfGenerate(section, sub) {
+      const key = section+'::'+sub;
+      if(!selfGenIterations[key]) selfGenIterations[key] = 0;
+      if(selfGenIterations[key] >= 4) return;
+      selfGenStatus[key] = true;
+      renderReportSections();
+      
+      let currentText = userInputs[key] || '';
+      let context = ''; // Build context from previous sections
+      
+      for(let i=selfGenIterations[key]; i<4; i++) {
+        selfGenIterations[key] = i+1;
+        
+        try {
+          const resp = await fetch('/self_reflect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              section: section,
+              subsection: sub,
+              text: currentText,
+              context: context,
+              group_id: currentGroup
+            })
+          });
+          const data = await resp.json();
+          
+          currentText = data.improved_text;
+          userInputs[key] = currentText;
+          evalResults[key] = `Groundedness: ${data.evaluation.groundedness}<br>Completeness: ${data.evaluation.completeness}<br>Coherence: ${data.evaluation.coherence}`;
+          reflectionResults[key] = `Iteration ${i+1}: Improved based on evaluation scores.`;
+          
+        } catch(e) {
+          evalResults[key] = 'Error during self-reflection.';
+          reflectionResults[key] = 'Error during improvement process.';
+        }
+        
+        renderReportSections();
+        await new Promise(res => setTimeout(res, 1200)); // Simulate thinking
+      }
+      
+      selfGenStatus[key] = false;
+      renderReportSections();
+    }
+
+    // --- Evaluation and Reflection ---
+    async function evaluateAndReflect(section, sub, val) {
+      const key = section+'::'+sub;
+      evalResults[key] = 'Evaluating...';
+      reflectionResults[key] = 'Self-reflecting and improving...';
+      renderReportSections();
+      
+      const req = {
+        title: 'Temp',
+        sections: { [section]: [sub] },
+        custom_prompts: {},
+        user_feedback: {},
+        group_id: currentGroup
+      };
+      
+      try {
+        const resp = await fetch(`/generate/report`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(req)
+        });
+        const data = await resp.json();
+        
+        if(data.sections && data.sections.length>0) {
+          evalResults[key] = `Groundedness: ${data.sections[0].evaluation.groundedness}<br>Completeness: ${data.sections[0].evaluation.completeness}<br>Coherence: ${data.sections[0].evaluation.coherence}`;
+          reflectionResults[key] = 'Content automatically improved through backend self-reflection.';
+          // Update the input with the improved text
+          userInputs[key] = data.sections[0].generated_text;
+        } else {
+          evalResults[key] = 'No evaluation.';
+          reflectionResults[key] = 'No reflection.';
+        }
+      } catch(e) {
+        evalResults[key] = 'Error evaluating.';
+        reflectionResults[key] = 'Error reflecting.';
+      }
+      
+      renderReportSections();
+    }
+
+    function togglePromptTemplate(key) {
+      const [section, sub] = key.split('::');
+      if(promptTemplateVisible[key]) {
+        promptTemplateVisible[key] = false;
+        renderReportSections();
+      } else {
+        // Fetch template if not already loaded
+        if(!promptTemplates[key]) {
+          fetch(`/prompt_template/report?group_id=${currentGroup}&section=${encodeURIComponent(section)}&subsection=${encodeURIComponent(sub)}`)
+            .then(r => r.json())
+            .then(d => {
+              promptTemplates[key] = d.template;
+              promptTemplateVisible[key] = true;
+              renderReportSections();
+            });
+        } else {
+          promptTemplateVisible[key] = true;
+          renderReportSections();
+        }
+      }
+    }
+
+    function savePromptTemplate(key, section, sub) {
+      const keyId = key.replace(/\s/g,"");
+      const newTemplate = document.getElementById('prompt-template-'+keyId).value;
+      fetch(`/prompt_template/report?group_id=${currentGroup}&section=${encodeURIComponent(section)}&subsection=${encodeURIComponent(sub)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ template: newTemplate })
+      })
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('save-status-'+keyId).innerText = 'Saved!';
+        promptTemplates[key] = newTemplate;
+      })
+      .catch(() => {
+        document.getElementById('save-status-'+keyId).innerText = 'Error saving.';
+      });
+    }
+    function onGroupChange() {
+      currentGroup = document.getElementById('group-select').value;
+      promptTemplateVisible = {};
+      promptTemplates = {};
+      renderUI();
+    }
+    // --- Init ---
+    renderUI();
+  </script>
+</body>
+</html>

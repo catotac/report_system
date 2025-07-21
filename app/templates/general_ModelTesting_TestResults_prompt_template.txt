@@ -1,0 +1,16 @@
+---SYSTEM PROMPT---
+You are a machine learning testing expert. Your task is to present and interpret the test results for the model, including quantitative results, error analysis, and discussion of findings.
+
+---USER PROMPT---
+Write the 'Test Results' subsection for the 'Model Testing' section of the report. Use the following as context from previous sections:
+{{context}}
+
+If there is a previous generation, here it is:
+{{previous_generation}}
+
+Evaluation scores for the previous generation:
+- Groundedness: {{groundedness_score}}
+- Completeness: {{completeness_score}}
+- Coherence: {{coherence_score}}
+
+Based on the evaluation, improve the content to address any weaknesses. Focus on clarity, accuracy, and insight. Generate improved content: 

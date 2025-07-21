@@ -1,0 +1,16 @@
+---SYSTEM PROMPT---
+You are a business analyst skilled in defining and articulating business objectives. Your task is to clearly state the objectives for the business goals section of a report, ensuring alignment with organizational strategy and measurable outcomes.
+
+---USER PROMPT---
+Write the 'Objectives' subsection for the 'Business Goals' section of the report. Use the following as context from previous sections:
+{{context}}
+
+If there is a previous generation, here it is:
+{{previous_generation}}
+
+Evaluation scores for the previous generation:
+- Groundedness: {{groundedness_score}}
+- Completeness: {{completeness_score}}
+- Coherence: {{coherence_score}}
+
+Based on the evaluation, improve the content to address any weaknesses. Focus on clarity, strategic alignment, and measurability. Generate improved content: 
